@@ -1,68 +1,105 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, FileText, CheckCircle, XCircle, Clock, CreditCard, Tag } from 'lucide-react';
+import { ArrowLeft, Edit2, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Card, Button } from '../components/UI.tsx';
-import { MOCK_PLANS } from '../constants.ts';
+import api from '../services/api';
+
+interface Plan {
+  id: number;
+  name: string;
+  duration_days: number;
+  price: number | string;
+  perks: string;
+  is_active: boolean;
+}
 
 const ViewPlan: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const plan = MOCK_PLANS.find(p => p.id === id);
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!plan) return <div className="p-8 text-center">Plan not found</div>;
+  useEffect(() => {
+    const fetchPlan = async () => {
+      try {
+        const response = await api.get(`/gyms/plans/${id}/`);
+        setPlan(response.data);
+      } catch (error) {
+        console.error('Failed to fetch plan:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    if (id) fetchPlan();
+  }, [id]);
+
+  if (loading) return <div className="p-8 text-center">Loading plan details...</div>;
+  if (!plan) return <div className="p-8 text-center text-red-500">Plan not found</div>;
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-      <div className="flex items-center gap-4">
-        <button onClick={() => navigate('/admin/plans')} className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors">
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Plan Details</h1>
-          <p className="text-gray-500 text-sm">Membership Configuration</p>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/admin/plans')} className="p-2 hover:bg-gray-100 rounded-full text-gray-600 transition-colors">
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{plan.name}</h1>
+            <p className="text-gray-500 text-sm">Plan ID: {plan.id}</p>
+          </div>
         </div>
+        <Button onClick={() => navigate(`/admin/plans/edit/${id}`)}>
+          <Edit2 className="w-4 h-4" />
+          Edit Plan
+        </Button>
       </div>
 
-      <Card className="space-y-8">
-        <div className="flex justify-between items-start">
-            <div className="flex gap-4">
-                <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                    <Tag className="w-8 h-8" />
-                </div>
-                <div>
-                    <h2 className="text-2xl font-black text-gray-900">{plan.name}</h2>
-                    <p className="text-sm font-mono text-gray-500">ID: {plan.id}</p>
-                </div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Main Info */}
+        <Card className="md:col-span-2 space-y-6">
+          <div className="border-b border-gray-100 pb-4">
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Pricing</span>
+            <div className="flex items-baseline gap-1 mt-1">
+              <span className="text-3xl font-bold text-gray-900">₹{Number(plan.price).toLocaleString()}</span>
+              <span className="text-gray-500">/ {plan.duration_days} days</span>
             </div>
-            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black uppercase tracking-widest ${plan.active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
-                {plan.active ? <CheckCircle className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
-                {plan.active ? 'Active' : 'Disabled'}
+          </div>
+
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">Perks & Benefits</span>
+            <div className="mt-2 space-y-2">
+              {plan.perks ? (
+                plan.perks.split('\n').map((perk, index) => (
+                  <div key={index} className="flex items-start gap-2 text-gray-700">
+                    <CheckCircle className="w-4 h-4 text-green-500 mt-0.5 flex-shrink-0" />
+                    <span>{perk}</span>
+                  </div>
+                ))
+              ) : (
+                <p className="text-gray-400 italic">No specific perks listed.</p>
+              )}
+            </div>
+          </div>
+        </Card>
+
+        {/* Sidebar Info */}
+        <Card className="space-y-4 h-fit">
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Status</span>
+            <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium ${plan.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}`}>
+              {plan.is_active ? <CheckCircle className="w-3.5 h-3.5" /> : <XCircle className="w-3.5 h-3.5" />}
+              {plan.is_active ? 'Active' : 'Inactive'}
             </span>
-        </div>
+          </div>
 
-        <div className="grid grid-cols-2 gap-6">
-            <div className="p-6 bg-gray-50 rounded-2xl border border-gray-100 text-center">
-                <Clock className="w-6 h-6 text-gray-400 mx-auto mb-2" />
-                <p className="text-xs font-bold text-gray-500 uppercase tracking-widest mb-1">Duration</p>
-                <p className="text-2xl font-black text-gray-900">{plan.duration} Days</p>
+          <div>
+            <span className="text-xs font-bold text-gray-400 uppercase tracking-widest block mb-1">Duration</span>
+            <div className="flex items-center gap-2 text-gray-900">
+              <Clock className="w-4 h-4 text-gray-400" />
+              <span className="font-medium">{plan.duration_days} Days</span>
             </div>
-            <div className="p-6 bg-blue-50 rounded-2xl border border-blue-100 text-center">
-                <CreditCard className="w-6 h-6 text-primary mx-auto mb-2" />
-                <p className="text-xs font-bold text-blue-500 uppercase tracking-widest mb-1">Price</p>
-                <p className="text-2xl font-black text-primary">₹{plan.price.toLocaleString()}</p>
-            </div>
-        </div>
-
-        <div>
-            <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">Description & Inclusions</h4>
-            <div className="p-5 border border-gray-100 rounded-xl text-gray-700 leading-relaxed font-medium">
-                {plan.description || 'No detailed description provided for this plan.'}
-            </div>
-        </div>
-      </Card>
-
-      <div className="flex justify-end gap-3 pt-4">
-        <Button variant="outline" onClick={() => navigate(`/admin/plans/edit/${id}`)}>Modify Plan</Button>
+          </div>
+        </Card>
       </div>
     </div>
   );

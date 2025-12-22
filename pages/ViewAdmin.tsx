@@ -1,27 +1,34 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, UserCircle, Shield, Mail, Phone, Building, Calendar } from 'lucide-react';
 import { Card, Badge, Button } from '../components/UI.tsx';
-import { MOCK_GYMS } from '../constants.ts';
+import api from '../services/api';
 
 const ViewAdmin: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  
-  // Mock fetching for the demo
-  const admin = { 
-    id: id, 
-    username: 'dwayne_owner', 
-    email: 'dwayne@ironparadise.com', 
-    first_name: 'Dwayne', 
-    last_name: 'Johnson', 
-    phone: '+1 555-0101', 
-    user_type: 'Gym Owner', 
-    gym_id: 'GYM-001',
-    joinedDate: 'Oct 12, 2022'
-  };
+  const [admin, setAdmin] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
 
-  const gym = MOCK_GYMS.find(g => g.id === admin.gym_id);
+  useEffect(() => {
+    const fetchAdmin = async () => {
+      try {
+        const response = await api.get(`/accounts/admins/${id}/`);
+        setAdmin(response.data);
+      } catch (error) {
+        console.error('Failed to fetch admin details:', error);
+        alert('Admin not found');
+        navigate('/superuser/admins');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (id) fetchAdmin();
+  }, [id, navigate]);
+
+  if (loading) return <div className="p-8 text-center text-gray-500">Loading profile...</div>;
+  if (!admin) return null;
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
@@ -68,7 +75,7 @@ const ViewAdmin: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-3 text-gray-600">
                     <Phone className="w-4 h-4 text-gray-400" />
-                    <span className="font-medium">{admin.phone}</span>
+                    <span className="font-medium">{admin.phone || 'N/A'}</span>
                   </div>
                 </div>
               </div>
@@ -76,13 +83,9 @@ const ViewAdmin: React.FC = () => {
               <div>
                 <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">System Access</h4>
                 <div className="space-y-3">
-                   <div className="flex items-center gap-3 text-gray-600">
+                  <div className="flex items-center gap-3 text-gray-600">
                     <span className="font-bold text-gray-400 text-[10px] uppercase">Username:</span>
                     <span className="font-mono text-primary font-bold">@{admin.username}</span>
-                  </div>
-                  <div className="flex items-center gap-3 text-gray-600">
-                    <span className="font-bold text-gray-400 text-[10px] uppercase">Staff ID:</span>
-                    <span className="font-mono text-gray-900">{admin.id}</span>
                   </div>
                 </div>
               </div>
@@ -94,17 +97,11 @@ const ViewAdmin: React.FC = () => {
                 <div className="p-4 bg-gray-50 rounded-xl border border-gray-100">
                   <div className="flex items-center gap-3 mb-2">
                     <Building className="w-5 h-5 text-primary" />
-                    <span className="font-bold text-gray-900">{gym?.name || 'Unassigned'}</span>
+                    <span className="font-bold text-gray-900">{admin.gym_name || 'Unassigned'}</span>
                   </div>
-                  <p className="text-xs text-gray-500">{gym?.location || 'No location set'}</p>
-                </div>
-              </div>
-
-              <div>
-                <h4 className="text-xs font-black text-gray-400 uppercase tracking-widest mb-3">History</h4>
-                <div className="flex items-center gap-3 text-gray-600">
-                  <Calendar className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-medium">Joined {admin.joinedDate}</span>
+                  {(admin.gym_name != null) ?
+                    <p className="text-xs text-gray-500">Authorized Access</p>
+                    : <p className="text-xs text-red-400">No Gym Assigned</p>}
                 </div>
               </div>
             </div>
