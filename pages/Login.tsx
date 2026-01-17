@@ -18,6 +18,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     localStorage.removeItem('accessToken');
     localStorage.removeItem('refreshToken');
     localStorage.removeItem('user');
+    localStorage.removeItem('user_role');
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -42,8 +43,12 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       localStorage.setItem('user', JSON.stringify(user));
 
       // Use the actual role from backend response
-      const serverRole = user.user_type as UserRole;
+      let serverRole = user.user_type as UserRole;
+      if (user.is_superuser) {
+        serverRole = 'superuser';
+      }
 
+      localStorage.setItem('user_role', serverRole);
       onLogin(serverRole);
     } catch (err: any) {
       console.error('Login error:', err);

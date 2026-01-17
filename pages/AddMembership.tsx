@@ -9,6 +9,7 @@ interface Member {
     user: {
         full_name: string;
         email: string;
+        username: string;
     };
 }
 
@@ -127,7 +128,7 @@ const AddMembership: React.FC = () => {
                             <option value="">-- Select Member --</option>
                             {members.map(m => (
                                 <option key={m.id} value={m.user.id}>
-                                    {m.user.full_name} ({m.user.email})
+                                    {m.user.full_name} ({m.user.username})
                                 </option>
                             ))}
                         </select>

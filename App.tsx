@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { HashRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import api from './services/api';
 import Sidebar from './components/Sidebar.tsx';
 import Login from './pages/Login.tsx';
 import SuperUserDashboard from './pages/SuperUserDashboard.tsx';
@@ -108,14 +109,29 @@ const PlaceholderPage: React.FC<{ title: string }> = ({ title }) => (
 );
 
 const App: React.FC = () => {
-  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(
+    (localStorage.getItem('user_role') as UserRole) || null
+  );
 
   const handleLogin = (role: UserRole) => {
     setUserRole(role);
   };
 
-  const handleLogout = () => {
-    setUserRole(null);
+  const handleLogout = async () => {
+    try {
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (refreshToken) {
+        await api.post('/accounts/logout/', { refresh: refreshToken });
+      }
+    } catch (error) {
+      console.error("Logout failed", error);
+    } finally {
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('user');
+      setUserRole(null);
+    }
   };
 
   return (

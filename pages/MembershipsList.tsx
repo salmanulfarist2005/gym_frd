@@ -24,6 +24,10 @@ const MembershipsList: React.FC = () => {
   const [memberships, setMemberships] = useState<Membership[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+
   useEffect(() => {
     fetchMemberships();
   }, []);
@@ -58,6 +62,14 @@ const MembershipsList: React.FC = () => {
     m.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (m.payment_receipt && m.payment_receipt.toLowerCase().includes(searchTerm.toLowerCase()))
   );
+
+  // Pagination Logic
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = filteredMemberships.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredMemberships.length / itemsPerPage);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   return (
     <div className="space-y-6">
@@ -107,8 +119,8 @@ const MembershipsList: React.FC = () => {
             <tbody className="divide-y divide-gray-100">
               {loading ? (
                 <tr><td colSpan={7} className="px-6 py-8 text-center text-gray-500">Loading memberships...</td></tr>
-              ) : filteredMemberships.length > 0 ? (
-                filteredMemberships.map((sub) => (
+              ) : currentItems.length > 0 ? (
+                currentItems.map((sub) => (
                   <tr key={sub.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 font-medium text-gray-900">{sub.member_name}</td>
                     <td className="px-6 py-4 text-gray-600 text-sm">{sub.member_email}</td>
@@ -179,8 +191,32 @@ const MembershipsList: React.FC = () => {
             </tbody>
           </table>
         </div>
-        <div className="p-4 border-t border-gray-100 bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
-          <span>Showing {filteredMemberships.length} memberships</span>
+        <div className="p-4 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+          <span className="text-xs text-gray-500">
+            Showing {indexOfFirstItem + 1} to {Math.min(indexOfLastItem, filteredMemberships.length)} of {filteredMemberships.length} memberships
+          </span>
+
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => paginate(currentPage - 1)}
+              disabled={currentPage === 1}
+              className="!py-1 !px-3 text-xs"
+            >
+              Previous
+            </Button>
+            <span className="flex items-center text-xs font-medium text-gray-700">
+              Page {currentPage} of {totalPages || 1}
+            </span>
+            <Button
+              variant="secondary"
+              onClick={() => paginate(currentPage + 1)}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="!py-1 !px-3 text-xs"
+            >
+              Next
+            </Button>
+          </div>
         </div>
       </Card>
     </div>

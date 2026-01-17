@@ -10,6 +10,7 @@ interface Plan {
   duration_days: number;
   price: number | string;
   perks: string;
+  perks_list?: string[];
   is_active: boolean;
   gym: number;
 }
@@ -142,8 +143,14 @@ const PlansList: React.FC = () => {
                         {plan.is_active ? 'Active' : 'Inactive'}
                       </span>
                     </td>
-                    <td className="px-6 py-4 text-gray-500 max-w-xs truncate">
-                      {plan.perks || '-'}
+                    <td className="px-6 py-4 text-gray-500 max-w-xs">
+                      {plan.perks_list && plan.perks_list.length > 0 ? (
+                        <span className="text-sm text-gray-600">
+                          {plan.perks_list.map(p => p.replace(/['"\[\]]/g, '')).join(', ')}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">-</span>
+                      )}
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
